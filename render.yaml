@@ -1,0 +1,65 @@
+# Blueprint do Render — sobe os 2 serviços de uma vez (plano free)
+# 1) evolution-api  -> conecta no WhatsApp (via QR code)
+# 2) whatsapp-mcp   -> conector que o ChatGPT acessa (Modo de desenvolvedor)
+#
+# Deploy: Render Dashboard -> New -> Blueprint -> apontar pra este repositório.
+# Os valores com "sync: false" são pedidos na hora do deploy (ver README).
+
+services:
+  - type: web
+    name: evolution-api
+    runtime: image
+    image:
+      # se este apontamento falhar, alternativa: docker.io/atendai/evolution-api:v2.2.3
+      url: docker.io/evoapicloud/evolution-api:latest
+    plan: free
+    envVars:
+      - key: SERVER_PORT
+        value: "10000"
+      - key: AUTHENTICATION_API_KEY
+        sync: false # invente uma senha longa (ver README) — é a "senha mestra" da Evolution
+      - key: DATABASE_ENABLED
+        value: "true"
+      - key: DATABASE_PROVIDER
+        value: postgresql
+      - key: DATABASE_CONNECTION_URI
+        sync: false # URL do Postgres gratuito (Supabase/Neon) — ver README passo 1
+      - key: DATABASE_SAVE_DATA_INSTANCE
+        value: "true"
+      - key: DATABASE_SAVE_DATA_NEW_MESSAGE
+        value: "true"
+      - key: DATABASE_SAVE_DATA_CONTACTS
+        value: "true"
+      - key: DATABASE_SAVE_DATA_CHATS
+        value: "true"
+      - key: CACHE_LOCAL_ENABLED
+        value: "true"
+      - key: CACHE_REDIS_ENABLED
+        value: "false"
+      - key: DEL_INSTANCE
+        value: "false"
+      - key: QRCODE_LIMIT
+        value: "30"
+      - key: LANGUAGE
+        value: pt-BR
+
+  - type: web
+    name: whatsapp-mcp
+    runtime: node
+    rootDir: mcp-server
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: PORT
+        value: "10000"
+      - key: EVOLUTION_URL
+        sync: false # URL pública do serviço evolution-api (ex: https://evolution-api-xxxx.onrender.com)
+      - key: EVOLUTION_API_KEY
+        sync: false # a MESMA senha usada em AUTHENTICATION_API_KEY acima
+      - key: EVOLUTION_INSTANCE
+        value: ana
+      - key: MCP_PATH_SECRET
+        sync: false # segredo longo que protege a URL do conector (ver README)
+      - key: BLOCKED_NUMBERS
+        sync: false # números que NUNCA podem ser lidos, separados por vírgula (pode deixar vazio)
