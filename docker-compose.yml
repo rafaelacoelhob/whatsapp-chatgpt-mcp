@@ -52,8 +52,6 @@ services:
     restart: always
     depends_on:
       - evolution
-    ports:
-      - "8090:8080" # PRECISA ser exposto em HTTPS público (ex: wamcp.livemode.com) p/ o ChatGPT acessar
     environment:
       PORT: "8080"
       EVOLUTION_URL: http://evolution:8080
@@ -62,6 +60,23 @@ services:
       MCP_PATH_SECRET: ${MCP_PATH_SECRET}
       BLOCKED_NUMBERS: ${BLOCKED_NUMBERS:-}
 
+  # HTTPS automático (Let's Encrypt) na frente do conector — o ChatGPT exige HTTPS válido.
+  # Requer o DOMAIN do .env apontando para o IP da VPS.
+  caddy:
+    image: caddy:2-alpine
+    restart: always
+    depends_on:
+      - mcp
+    ports:
+      - "80:80"
+      - "443:443"
+    command: ["sh", "-c", "printf '${DOMAIN} {\\n\\treverse_proxy mcp:8080\\n}\\n' > /etc/caddy/Caddyfile && exec caddy run --config /etc/caddy/Caddyfile"]
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+
 volumes:
   evolution_pgdata:
   evolution_instances:
+  caddy_data:
+  caddy_config:
