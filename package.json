@@ -1,0 +1,23 @@
+{
+  "name": "whatsapp-chatgpt-ana",
+  "version": "1.0.0",
+  "description": "Conecta um WhatsApp ao ChatGPT: cada cliente/agência vira um Projeto no ChatGPT, com relatório do dia (via Agendados) e perguntas livres sobre as conversas. Custo zero — tudo open-source/self-hosted.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rafaelacoelhob/whatsapp-chatgpt-mcp.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rafaelacoelhob/whatsapp-chatgpt-mcp/issues"
+  },
+  "homepage": "https://github.com/rafaelacoelhob/whatsapp-chatgpt-mcp#readme",
+  "dependencies": {
+    "ssh2": "^1.17.0"
+  }
+}

@@ -125,10 +125,17 @@ const json = (data) => ({
 function buildServer() {
   const server = new McpServer({ name: "whatsapp", version: "1.0.0" });
 
-  server.tool(
+  // Todas as ferramentas são estritamente de leitura — as annotations abaixo
+  // declaram isso ao cliente (ChatGPT rotula certo e pede menos permissão).
+  const READ_ONLY = { readOnlyHint: true, destructiveHint: false, openWorldHint: false };
+
+  server.registerTool(
     "list_chats",
-    "Lista as conversas recentes do WhatsApp (individuais e grupos), com nome e identificador.",
-    { limit: z.number().int().min(1).max(200).optional().describe("Máximo de conversas (padrão 30)") },
+    {
+      description: "Lista as conversas recentes do WhatsApp (individuais e grupos), com nome e identificador. Somente leitura.",
+      inputSchema: { limit: z.number().int().min(1).max(200).optional().describe("Máximo de conversas (padrão 30)") },
+      annotations: READ_ONLY,
+    },
     async ({ limit = 30 }) => {
       const data = await evo(`/chat/findChats/${EVOLUTION_INSTANCE}`, {});
       const chats = asRecords(data)
@@ -143,10 +150,13 @@ function buildServer() {
     }
   );
 
-  server.tool(
+  server.registerTool(
     "find_contact",
-    "Busca contatos do WhatsApp por nome ou número. Use antes de get_messages quando só souber o nome.",
-    { query: z.string().min(2).describe("Nome (ou parte) ou número do contato") },
+    {
+      description: "Busca contatos do WhatsApp por nome ou número. Use antes de get_messages quando só souber o nome. Somente leitura.",
+      inputSchema: { query: z.string().min(2).describe("Nome (ou parte) ou número do contato") },
+      annotations: READ_ONLY,
+    },
     async ({ query }) => {
       const data = await evo(`/chat/findContacts/${EVOLUTION_INSTANCE}`, { where: {} });
       const q = query.toLowerCase();
@@ -167,13 +177,16 @@ function buildServer() {
     }
   );
 
-  server.tool(
+  server.registerTool(
     "get_messages",
-    "Busca as mensagens de UMA conversa específica do WhatsApp (contato ou grupo).",
     {
-      chat: z.string().describe("Número com DDI (ex: 5511999999999) ou JID retornado por list_chats/find_contact"),
-      limit: z.number().int().min(1).max(500).optional().describe("Máximo de mensagens (padrão 50)"),
-      since: z.string().optional().describe("Só mensagens a partir desta data/hora (ISO, ex: 2026-07-27 ou 2026-07-27T08:00:00-03:00)"),
+      description: "Busca as mensagens de UMA conversa específica do WhatsApp (contato ou grupo). Somente leitura.",
+      inputSchema: {
+        chat: z.string().describe("Número com DDI (ex: 5511999999999) ou JID retornado por list_chats/find_contact"),
+        limit: z.number().int().min(1).max(500).optional().describe("Máximo de mensagens (padrão 50)"),
+        since: z.string().optional().describe("Só mensagens a partir desta data/hora (ISO, ex: 2026-07-27 ou 2026-07-27T08:00:00-03:00)"),
+      },
+      annotations: READ_ONLY,
     },
     async ({ chat, limit = 50, since }) => {
       const jid = resolveJid(chat);
@@ -193,12 +206,15 @@ function buildServer() {
     }
   );
 
-  server.tool(
+  server.registerTool(
     "get_recent_messages",
-    "Busca as mensagens mais recentes de TODAS as conversas do WhatsApp. Útil para resumos do dia.",
     {
-      limit: z.number().int().min(1).max(1000).optional().describe("Máximo de mensagens (padrão 200)"),
-      since: z.string().optional().describe("Só mensagens a partir desta data/hora (ISO, ex: 2026-07-27)"),
+      description: "Busca as mensagens mais recentes de TODAS as conversas do WhatsApp. Útil para resumos do dia. Somente leitura.",
+      inputSchema: {
+        limit: z.number().int().min(1).max(1000).optional().describe("Máximo de mensagens (padrão 200)"),
+        since: z.string().optional().describe("Só mensagens a partir desta data/hora (ISO, ex: 2026-07-27)"),
+      },
+      annotations: READ_ONLY,
     },
     async ({ limit = 200, since }) => {
       const data = await evo(`/chat/findMessages/${EVOLUTION_INSTANCE}`, { where: {} });
