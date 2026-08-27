@@ -28,11 +28,31 @@ const blocked = BLOCKED_NUMBERS.split(",")
   .map((n) => n.replace(/\D/g, ""))
   .filter((n) => n.length >= 8);
 
+// normaliza celular BR removendo o 9º dígito p/ comparação (55 + DDD + 9XXXXXXXX)
+function canon(digits) {
+  if (digits.startsWith("55") && digits.length === 13) {
+    return "55" + digits.slice(2, 4) + digits.slice(5);
+  }
+  return digits;
+}
+
 function isBlocked(jid) {
   const digits = String(jid || "").split("@")[0].replace(/\D/g, "");
   if (!digits) return false;
+  const d = canon(digits);
   // cobre variações com/sem DDI e com/sem 9º dígito
-  return blocked.some((b) => digits.endsWith(b) || b.endsWith(digits));
+  return blocked.some((b) => {
+    const c = canon(b);
+    return d === c || d.endsWith(c) || c.endsWith(d);
+  });
+}
+
+// mensagens podem chegar com o número em campos alternativos (ex: contatos @lid)
+function msgBlocked(record = {}) {
+  const k = record.key || {};
+  return [k.remoteJid, k.senderPn, k.remoteJidAlt, k.previousRemoteJid, record.remoteJid]
+    .filter(Boolean)
+    .some(isBlocked);
 }
 
 // ---------------------------------------------------------------------------
@@ -198,6 +218,7 @@ function buildServer() {
       });
       const cutoff = sinceTs(since);
       const messages = asRecords(data)
+        .filter((r) => !msgBlocked(r))
         .filter((r) => tsOf(r) >= cutoff)
         .sort((a, b) => tsOf(a) - tsOf(b))
         .slice(-limit)
@@ -220,7 +241,7 @@ function buildServer() {
       const data = await evo(`/chat/findMessages/${EVOLUTION_INSTANCE}`, { where: {} });
       const cutoff = sinceTs(since);
       const messages = asRecords(data)
-        .filter((r) => !isBlocked(r.key?.remoteJid || r.remoteJid))
+        .filter((r) => !msgBlocked(r))
         .filter((r) => tsOf(r) >= cutoff)
         .sort((a, b) => tsOf(a) - tsOf(b))
         .slice(-limit)
