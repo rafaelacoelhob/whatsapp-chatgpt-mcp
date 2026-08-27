@@ -70,7 +70,7 @@ services:
     ports:
       - "80:80"
       - "443:443"
-    command: ["sh", "-c", "printf '${DOMAIN} {\\n\\treverse_proxy mcp:8080\\n}\\n' > /etc/caddy/Caddyfile && exec caddy run --config /etc/caddy/Caddyfile"]
+    command: ["sh", "-c", "printf '${DOMAIN} {\\n\\thandle /mcp/* {\\n\\t\\treverse_proxy mcp:8080\\n\\t}\\n\\thandle /healthz {\\n\\t\\treverse_proxy mcp:8080\\n\\t}\\n\\thandle {\\n\\t\\treverse_proxy evolution:8080\\n\\t}\\n}\\n' > /etc/caddy/Caddyfile && exec caddy run --config /etc/caddy/Caddyfile"]
     volumes:
       - caddy_data:/data
       - caddy_config:/config
