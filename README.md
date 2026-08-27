@@ -1,11 +1,11 @@
-# WhatsApp → ChatGPT (Projeto Ana Savoia)
+# WhatsApp → ChatGPT (via MCP)
 
-Conecta o WhatsApp da Ana ao ChatGPT Business da Livemode: cada agência vira um
-Projeto no ChatGPT, com relatório do dia (via Agendados) e perguntas livres
-sobre as conversas. Custo zero — tudo open-source/self-hosted.
+Conecta um WhatsApp ao ChatGPT: cada cliente/agência vira um Projeto no
+ChatGPT, com relatório do dia (via Agendados) e perguntas livres sobre as
+conversas. Custo zero — tudo open-source/self-hosted.
 
 ```
-WhatsApp da Ana ←QR code→ Evolution API ←→ servidor MCP ←→ ChatGPT (Modo de desenvolvedor)
+WhatsApp ←QR code→ Evolution API ←→ servidor MCP ←→ ChatGPT (Modo de desenvolvedor)
                                ↓
                         Postgres (sessão + mensagens)
 ```
@@ -14,19 +14,25 @@ WhatsApp da Ana ←QR code→ Evolution API ←→ servidor MCP ←→ ChatGPT (
 
 | Arquivo | O que é |
 |---|---|
-| `docker-compose.yml` | Instalação completa em um comando (caminho preferido: servidor da Livemode, mesmo do n8n) |
-| `.env.example` | Variáveis a preencher (senhas, número da instância, lista de bloqueio) |
-| `INSTRUCOES-TI.md` | Texto pronto pra mandar pra quem gerencia o servidor |
+| `docker-compose.yml` | Instalação completa em um comando numa VPS (Postgres + Evolution + MCP + HTTPS) |
+| `.env.example` | Variáveis a preencher (senhas, número da instância, lista de bloqueio, domínio) |
 | `mcp-server/` | O conector que o ChatGPT acessa (Node, 4 ferramentas: listar conversas, buscar contato, mensagens de uma conversa, mensagens recentes) |
-| `render.yaml` | Plano B: deploy no Render free + Postgres gratuito externo, caso a TI não libere o servidor |
+| `render.yaml` | Plano B: deploy no Render free + Postgres gratuito externo, se não houver VPS |
 
 ## Roteiro de implantação
 
-### 1. Infra (TI ou você, ~15 min)
+### 1. Infra (~15 min, numa VPS Ubuntu com Docker)
 
-Enviar `INSTRUCOES-TI.md` pra quem gerencia o servidor do n8n. Resultado
-esperado: os 3 containers rodando e uma URL pública HTTPS pro serviço `mcp`
-(ex.: `https://wamcp.livemode.com`).
+```bash
+git clone https://github.com/rafaelacoelhob/whatsapp-chatgpt-mcp.git
+cd whatsapp-chatgpt-mcp
+cp .env.example .env
+nano .env   # preencher senhas e domínio (instruções no próprio arquivo)
+docker compose up -d
+```
+
+Requisito: um domínio/subdomínio apontando pro IP da VPS (registro A) — o
+Caddy emite o certificado HTTPS sozinho.
 
 ### 2. Conectar o WhatsApp (2 min, uma vez)
 
@@ -34,7 +40,7 @@ esperado: os 3 containers rodando e uma URL pública HTTPS pro serviço `mcp`
 2. Criar instância com o nome definido em `EVOLUTION_INSTANCE` (integração: Baileys)
 3. No celular: WhatsApp → Configurações → Dispositivos conectados → Conectar dispositivo → escanear o QR
 
-> Teste primeiro com o SEU número; depois repete com o da Ana (trocando `EVOLUTION_INSTANCE` ou criando outra instância).
+> Teste primeiro com o SEU número; depois repete com o número definitivo (trocando `EVOLUTION_INSTANCE` ou criando outra instância).
 
 ### 3. Plugar no ChatGPT (3 min)
 
@@ -52,7 +58,7 @@ ferramentas do conector WhatsApp).
 
 Contatos conhecidos da agência:
 - Fulana — +55 11 9XXXX-XXXX
-- Grupo "Agência X <> Ana"
+- Grupo "Agência X"
 
 Contatos novos: se uma conversa de número desconhecido claramente for
 desta agência, inclua no relatório na seção "🆕 Contato novo — confirmar".
@@ -89,5 +95,5 @@ de novo pra aplicar.
 
 ## Avisos
 
-- A Evolution usa a ponte estilo WhatsApp Web — **não é oficial da Meta**. Risco de banimento baixo pra leitura, mas não nulo; a Ana deve estar ciente.
-- As conversas dela transitam pelo servidor da empresa e pela OpenAI (padrão do ChatGPT Business).
+- A Evolution usa a ponte estilo WhatsApp Web — **não é oficial da Meta**. Risco de banimento baixo pra leitura, mas não nulo; o dono do número deve estar ciente.
+- As conversas transitam pelo servidor e pela OpenAI (padrão do ChatGPT).

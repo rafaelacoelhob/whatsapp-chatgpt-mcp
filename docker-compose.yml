@@ -1,4 +1,4 @@
-# WhatsApp -> ChatGPT (projeto Ana Savoia)
+# WhatsApp -> ChatGPT (via MCP)
 # Sobe 3 containers: banco (Postgres), Evolution API (ponte com o WhatsApp)
 # e o servidor MCP (conector que o ChatGPT acessa).
 #
