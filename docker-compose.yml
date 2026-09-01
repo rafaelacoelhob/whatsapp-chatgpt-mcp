@@ -28,7 +28,7 @@ services:
       postgres:
         condition: service_healthy
     ports:
-      - "8080:8080" # painel/manager e API — pode ficar só na rede interna
+      - "127.0.0.1:8080:8080" # painel/manager e API — só acessível de dentro do servidor (via túnel SSH)
     environment:
       SERVER_PORT: "8080"
       AUTHENTICATION_API_KEY: ${EVOLUTION_API_KEY}
@@ -70,7 +70,7 @@ services:
     ports:
       - "80:80"
       - "443:443"
-    command: ["sh", "-c", "printf '${DOMAIN} {\\n\\thandle /mcp/* {\\n\\t\\treverse_proxy mcp:8080\\n\\t}\\n\\thandle /healthz {\\n\\t\\treverse_proxy mcp:8080\\n\\t}\\n\\thandle {\\n\\t\\treverse_proxy evolution:8080\\n\\t}\\n}\\n' > /etc/caddy/Caddyfile && exec caddy run --config /etc/caddy/Caddyfile"]
+    command: ["sh", "-c", "printf '${DOMAIN} {\\n\\treverse_proxy mcp:8080\\n}\\n' > /etc/caddy/Caddyfile && exec caddy run --config /etc/caddy/Caddyfile"]
     volumes:
       - caddy_data:/data
       - caddy_config:/config
